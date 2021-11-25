@@ -9,13 +9,34 @@ def least_square(x,y):
 	# TODO
 	# return the least-squares solution
 	# you can use np.linalg.lstsq
+	# y = kx + b
+	
+	
+	# Changing so we have a coefficient of x^0
+	A = np.vstack([x, np.ones(len(x))]).T
+
+	k, b = np.linalg.lstsq(A, y)[0]
+	
+	
 	return k, b
 
 def num_inlier(x,y,k,b,n_samples,thres_dist):
 	# TODO
 	# compute the number of inliers and a mask that denotes the indices of inliers
 	num = 0
-	mask = np.zeros(x.shape, dtype=bool)
+	mask = np.ones(x.shape, dtype=bool)
+
+	predicted = x * k + (np.ones(x.shape) * b)
+	difference = abs(predicted - y)
+	
+
+	
+
+	threshold_evaluation = np.greater(np.ones(predicted.shape)*thres_dist, difference)
+	
+	mask = threshold_evaluation 
+
+	num = sum(mask)
 
 	return num, mask
 
@@ -26,6 +47,23 @@ def ransac(x,y,iter,n_samples,thres_dist,num_subset):
 	b_ransac = None
 	inlier_mask = None
 	best_inliers = 0
+
+	for _ in range(iter):
+		#Compute a subset with num_subset
+		sample_indices = np.random.choice(len(x), size=num_subset)
+		x_new = x[sample_indices]
+		y_new = y[sample_indices]
+
+		k_ransac_iter, b_ransac_iter = least_square(x_new, y_new)
+		
+		num, inlier_mask_iter = num_inlier(x, y, k_ransac_iter, b_ransac_iter, n_samples, thres_dist)
+
+		if num > best_inliers:
+			k_ransac = k_ransac_iter
+			b_ransac = b_ransac_iter
+			inlier_mask = inlier_mask_iter
+			best_inliers = num
+
 
 	return k_ransac, b_ransac, inlier_mask
 
