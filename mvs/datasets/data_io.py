@@ -4,11 +4,41 @@ import sys
 from PIL import Image
 
 def read_cam_file(filename):
+
+    with open(filename, 'r') as file:
+        lines = file.readlines()
     # TODO
+    
+    
+    extrinsics =  [float(value.replace('\n', '')) for value in lines[1].split(' ') if value != '\n']
+    extrinsics += [float(value.replace('\n', '')) for value in lines[2].split(' ') if value != '\n']
+    extrinsics += [float(value.replace('\n', '')) for value in lines[3].split(' ') if value != '\n']
+    extrinsics += [float(value.replace('\n', '')) for value in lines[4].split(' ') if value != '\n']
+    
+    intrinsics = [float(value.replace('\n', '')) for value in lines[7].split(' ') if value != '\n']
+    intrinsics += [float(value.replace('\n', '')) for value in lines[8].split(' ') if value != '\n']
+    intrinsics += [float(value.replace('\n', '')) for value in lines[9].split(' ') if value != '\n']
+    
+
+    depth_min = float(lines[11].split(' ')[0].replace('\n', ''))
+    depth_max = float(lines[11].split(' ')[1].replace('\n', ''))
+    
+    intrinsics = np.array(intrinsics).reshape(3,3)
+    extrinsics = np.array(extrinsics).reshape(4,4)
+    
     return intrinsics, extrinsics, depth_min, depth_max
+
 
 def read_img(filename):
     # TODO
+    # Read and return image with normalize intensity in range(0,1)
+    
+    im_frame = Image.open(filename)
+    np_image = np.array(im_frame.getdata())
+    
+    np_img = np.array((np_image - np.min(np_image)) / (np.max(np_image) - np.min(np_image)))
+    
+
     return np_img
 
 def read_depth(filename):
