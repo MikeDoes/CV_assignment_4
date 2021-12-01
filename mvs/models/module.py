@@ -15,8 +15,8 @@ class FeatureNet(nn.Module):
         self.conv2 = nn.Conv2d(8, 8, (3,3), stride=1, padding='same')
         self.bn2 = nn.BatchNorm2d(8)
         
-        # W/2 x H/2 x 16
-        self.conv3 = nn.Conv2d(8, 16, (5,5), stride=2)
+        # W/2 x H/2 x 16 Need to double check the magic formula
+        self.conv3 = nn.Conv2d(8, 16, (5,5), stride=2, padding=2)
         self.bn3 = nn.BatchNorm2d(16)
 
         # W/2 x H/2 x 16
@@ -27,8 +27,8 @@ class FeatureNet(nn.Module):
         self.conv5 = nn.Conv2d(16, 16, (3, 3), stride=1, padding='same')
         self.bn5 = nn.BatchNorm2d(16)
 
-        # W/4, H/4 x 32
-        self.conv6 = nn.Conv2d(16, 32, (5, 5), stride=2)
+        # W/4, H/4 x 32 Need to double check the magic formula
+        self.conv6 = nn.Conv2d(16, 32, (5, 5), stride=2, padding=2)
         self.bn6 = nn.BatchNorm2d(32)
 
         # W/4, H/4 x 32
@@ -63,12 +63,34 @@ class SimlarityRegNet(nn.Module):
     def __init__(self, G):
         super(SimlarityRegNet, self).__init__()
         # TODO
+        self.G = G
+        self.relu = nn.ReLU(True)
+        
+        #Not sure about the padding = 'same'
+        self.conv1 = nn.Conv2d(G, 8, (3,3), stride=1, padding='same')
+        self.conv2 = nn.Conv2d(8, 16, (3,3), stride=2, padding='same')
+        self.conv3 = nn.Conv2d(16, 32, (3,3), stride=2, padding='same')
+        self.conv_transpose_1 = nn.Conv2d(32, 16, (3,3), stride=2, padding='same')
+        self.conv_transpose_2 = nn.Conv2d(16, 8, (3,3), stride=2, padding='same')
+        
+        self.conv4 = nn.Conv2d(8, 1, (3,3), stride=1, padding='same')
+        
 
     def forward(self, x):
         # x: [B,G,D,H,W]
         # out: [B,D,H,W]
         # TODO
+        B,G,D,H,W = x.size()
+        C_0 = self.relu(self.conv1(x))
+        C_1 = self.relu(self.conv2(C_0))
+        C_3 = self.relu(self.conv3(C_1))
+        C_3 = self.conv_transpose_1(C_3)
+        C_4 = self.conv_transpose_2(C_3 + C_1)
+        S_ = self.relu(self.conv4(C_4 + C_0))
 
+        S_ = S_.view((B,D,H,W))
+        
+        return S_
 
 def warping(src_fea, src_proj, ref_proj, depth_values):
     # src_fea: [B, C, H, W]
