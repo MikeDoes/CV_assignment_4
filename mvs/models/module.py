@@ -67,13 +67,13 @@ class SimlarityRegNet(nn.Module):
         self.relu = nn.ReLU(True)
         
         #Not sure about the padding = 'same'
-        self.conv1 = nn.Conv2d(G, 8, (3,3), stride=1, padding=1)
-        self.conv2 = nn.Conv2d(8, 16, (3,3), stride=2, padding=1)
-        self.conv3 = nn.Conv2d(16, 32, (3,3), stride=2, padding=1)
-        self.conv_transpose_1 = nn.ConvTranspose2d(32, 16, (3,3), stride=2, padding=1, output_padding=1)
-        self.conv_transpose_2 = nn.ConvTranspose2d(16, 8, (3,3), stride=2, padding=1, output_padding=1)
+        self.conv1 = nn.Conv2d(G, 8, (3,3), stride=1, padding=0)
+        self.conv2 = nn.Conv2d(8, 16, (3,3), stride=2, padding=0)
+        self.conv3 = nn.Conv2d(16, 32, (3,3), stride=2, padding=0)
+        self.conv_transpose_1 = nn.ConvTranspose2d(32, 16, (3,3), stride=2, padding=0, output_padding=1)
+        self.conv_transpose_2 = nn.ConvTranspose2d(16, 8, (3,3), stride=2, padding=0, output_padding=1)
         
-        self.conv4 = nn.Conv2d(8, 1, (3,3), stride=1, padding=1)
+        self.conv4 = nn.Conv2d(8, 1, (3,3), stride=1, padding=0)
         
 
     def forward(self, x):
@@ -107,6 +107,9 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
     # compute the warped positions with depth values
 
     with torch.no_grad():
+        depth_values = depth_values.unsqueeze(2).repeat(1, 1, H)
+        depth_values = depth_values.unsqueeze(3).repeat(1,1,1, W)
+        
         # relative transformation from reference to source view
         proj = torch.matmul(src_proj, torch.inverse(ref_proj))
 
