@@ -174,9 +174,11 @@ def train_sample(sample, detailed_summary=False):
     model.train()
     optimizer.zero_grad()
 
+
+    sample = {k:v.to(device) for k,v in sample.items()}
+    
     depth_gt = sample["depth"]
     mask = sample["mask"]
-    sample = {k:v.to(device) for k,v in sample.items()}
 
     outputs = model(sample["imgs"], sample["proj_matrices"], sample["depth_values"])
     depth_est = outputs["depth"]
@@ -203,10 +205,12 @@ def train_sample(sample, detailed_summary=False):
 def test_sample(sample, detailed_summary=True):
     model.eval()
 
+
+    sample = {k:v.to(device) for k,v in sample.items()}
+
     depth_gt = sample["depth"]
     mask = sample["mask"]
-    sample = {k:v.to(device) for k,v in sample.items()}
-    
+
     outputs = model(sample["imgs"], sample["proj_matrices"], sample["depth_values"])
     depth_est = outputs["depth"]
 
