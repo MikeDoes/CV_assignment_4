@@ -242,6 +242,8 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
 
     channel_in_group = C / G
 
+    print(channel_in_group)
+
     for g in range(channel_in_group):
         lower = g * channel_in_group
         upper = (g + 1) * channel_in_group
