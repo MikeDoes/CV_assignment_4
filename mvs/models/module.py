@@ -270,6 +270,7 @@ def mvs_loss(depth_est, depth_gt, mask):
     # depth_gt: [B,1,H,W]
     # mask: [B,1,H,W]
     # TODO
+    print(mask)
     mask = mask > 1e-5
     masked_depth_est = depth_est[mask]
     masked_depth_gt = depth_gt[mask]
