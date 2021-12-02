@@ -67,15 +67,17 @@ print("argv:", sys.argv[1:])
 print_args(args)
 
 # dataset, dataloader
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 MVSDataset = find_dataset_def(args.dataset)
-train_dataset = MVSDataset(args.trainpath, args.trainlist, "train", 3, args.numdepth)
-test_dataset = MVSDataset(args.testpath, args.testlist, "val", 3, args.numdepth)
-TrainImgLoader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4, drop_last=True)
-TestImgLoader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4, drop_last=False)
+train_dataset = MVSDataset(args.trainpath, args.trainlist, "train", 3, args.numdepth).to(device)
+test_dataset = MVSDataset(args.testpath, args.testlist, "val", 3, args.numdepth).to(device)
+TrainImgLoader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4, drop_last=True, pin_memory=True)
+TestImgLoader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4, drop_last=False, pin_memory=True)
 
 # model, optimizer
-model = Net()
-model_loss = mvs_loss
+model = Net().to(device)
+model_loss = mvs_loss.to(device)
 optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.wd)
 
 # load parameters

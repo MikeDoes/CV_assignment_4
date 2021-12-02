@@ -37,10 +37,6 @@ def read_img(filename):
     #np_image = np.array(im_frame.getdata())
     np_img = np.asarray(im_frame, dtype=np.float16)
     np_img /= 255.0
-    
-    print('NP IMAGE')
-    print(np_img)
-    print(np_img.shape)
 
     return np_img
 
