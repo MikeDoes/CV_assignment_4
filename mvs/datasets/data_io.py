@@ -26,6 +26,12 @@ def read_cam_file(filename):
     intrinsics = np.array(intrinsics).reshape(3,3)
     extrinsics = np.array(extrinsics).reshape(4,4)
     
+
+
+    print('intrinsics', intrinsics)
+    print('extrinsics', extrinsics)
+    print('Depth Max - min', depth_max, depth_min)
+
     return intrinsics, extrinsics, depth_min, depth_max
 
 
