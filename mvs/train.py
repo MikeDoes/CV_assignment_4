@@ -72,8 +72,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 MVSDataset = find_dataset_def(args.dataset)
 train_dataset = MVSDataset(args.trainpath, args.trainlist, "train", 3, args.numdepth)
 test_dataset = MVSDataset(args.testpath, args.testlist, "val", 3, args.numdepth)
-TrainImgLoader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4, drop_last=True, pin_memory=True)
-TestImgLoader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4, drop_last=False, pin_memory=True)
+TrainImgLoader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4, drop_last=True)
+TestImgLoader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4, drop_last=False)
 
 # model, optimizer
 model = Net().to(device)
@@ -176,7 +176,7 @@ def train_sample(sample, detailed_summary=False):
 
 
     sample = {k:v.to(device) for k,v in sample.items()}
-    
+
     depth_gt = sample["depth"]
     mask = sample["mask"]
 
