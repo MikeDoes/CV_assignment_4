@@ -81,6 +81,7 @@ class SimlarityRegNet(nn.Module):
         # out: [B,D,H,W]
         # TODO
         B,G,D,H,W = x.size()
+        print(x.size())
         C_0 = self.relu(self.conv1(x))
         C_1 = self.relu(self.conv2(C_0))
         C_3 = self.relu(self.conv3(C_1))
@@ -134,9 +135,9 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
         xyz = torch.unsqueeze(xyz, 0).repeat(B, 1, 1)  # [B, 3, H*W]
         rot_xyz = torch.matmul(rot, xyz)  # [B, 3, H*W]
 
-        rot_depth_xyz = rot_xyz.unsqueeze(2).repeat(1, 1, D, 1) * depth_values.view(
-            B, 1, D, H * W
-        )  # [B, 3, D, H*W]
+        print(depth_values.shape)
+
+        rot_depth_xyz = rot_xyz.unsqueeze(2).repeat(1, 1, D, 1) * depth_values.view(B, 1, D, H * W)  # [B, 3, D, H*W]
         proj_xyz = rot_depth_xyz + trans.view(B, 3, 1, 1)  # [B, 3, D, H*W]
        
         proj_xy = proj_xyz[:, :2, :, :] / proj_xyz[:, 2:3, :, :]  # [B, 2, D, H*W]
