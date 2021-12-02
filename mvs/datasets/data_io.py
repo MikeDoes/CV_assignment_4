@@ -34,13 +34,14 @@ def read_img(filename):
     # Read and return image with normalize intensity in range(0,1)
     
     im_frame = Image.open(filename)
-    np_image = np.array(im_frame.getdata())
-    
-    np_img = np_image / 255.0
+    #np_image = np.array(im_frame.getdata())
+    np_img = np.asarray(im_frame)
+    np_img /= 255.0
     
     print('NP IMAGE')
-    print(np_image)
-    print(np_image.shape)
+    print(np_img)
+    print(np_img.shape)
+
     return np_img
 
 def read_depth(filename):
