@@ -68,10 +68,10 @@ class SimlarityRegNet(nn.Module):
         
         #Not sure about the padding = 'same'
         self.conv1 = nn.Conv2d(G, 8, (3,3), stride=1, padding='same')
-        self.conv2 = nn.Conv2d(8, 16, (3,3), stride=2, padding='same')
-        self.conv3 = nn.Conv2d(16, 32, (3,3), stride=2, padding='same')
-        self.conv_transpose_1 = nn.Conv2d(32, 16, (3,3), stride=2, padding='same')
-        self.conv_transpose_2 = nn.Conv2d(16, 8, (3,3), stride=2, padding='same')
+        self.conv2 = nn.Conv2d(8, 16, (3,3), stride=2, padding=1)
+        self.conv3 = nn.Conv2d(16, 32, (3,3), stride=2, padding=1)
+        self.conv_transpose_1 = nn.Conv2d(32, 16, (3,3), stride=2, padding=1)
+        self.conv_transpose_2 = nn.Conv2d(16, 8, (3,3), stride=2, padding=1)
         
         self.conv4 = nn.Conv2d(8, 1, (3,3), stride=1, padding='same')
         
@@ -200,5 +200,5 @@ def mvs_loss(depth_est, depth_gt, mask):
     masked_depth_est = depth_est[mask]
     masked_depth_gt = depth_gt[mask]
     loss = F.l1_loss(masked_depth_est, masked_depth_gt, reduction='mean')
-    
+
     return loss
