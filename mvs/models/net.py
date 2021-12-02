@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .module import *
 
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -33,7 +33,7 @@ class Net(nn.Module):
             warped_src_feature = warping(src_fea, src_proj, ref_proj, depth_values)
             # group-wise correlation
             similarity = group_wise_correlation(ref_feature, warped_src_feature, self.G)
-            similarity_sum = similarity_sum + similarity
+            similarity_sum = similarity_sum.to(device) + similarity.to(device)
 
         # aggregate matching similarity from all the source views by averaging
         similarity_sum = similarity_sum.div_(V)
