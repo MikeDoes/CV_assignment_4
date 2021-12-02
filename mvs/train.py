@@ -70,15 +70,15 @@ print_args(args)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 MVSDataset = find_dataset_def(args.dataset)
-train_dataset = MVSDataset(args.trainpath, args.trainlist, "train", 3, args.numdepth).to(device)
-test_dataset = MVSDataset(args.testpath, args.testlist, "val", 3, args.numdepth).to(device)
+train_dataset = MVSDataset(args.trainpath, args.trainlist, "train", 3, args.numdepth)
+test_dataset = MVSDataset(args.testpath, args.testlist, "val", 3, args.numdepth)
 TrainImgLoader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=4, drop_last=True, pin_memory=True)
 TestImgLoader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=4, drop_last=False, pin_memory=True)
 
 # model, optimizer
-model = Net().to(device)
-model_loss = mvs_loss.to(device)
-optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.wd)
+model = Net()
+model_loss = mvs_loss
+optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.wd).to(device)
 
 # load parameters
 start_epoch = 0
@@ -177,7 +177,7 @@ def train_sample(sample, detailed_summary=False):
     depth_gt = sample["depth"]
     mask = sample["mask"]
 
-    outputs = model(sample["imgs"], sample["proj_matrices"], sample["depth_values"])
+    outputs = model(sample["imgs"], sample["proj_matrices"], sample["depth_values"]).to(device)
     depth_est = outputs["depth"]
 
     loss = model_loss(depth_est, depth_gt, mask)
@@ -206,7 +206,7 @@ def test_sample(sample, detailed_summary=True):
     mask = sample["mask"]
 
     outputs = model(sample["imgs"], sample["proj_matrices"], sample["depth_values"])
-    depth_est = outputs["depth"]
+    depth_est = outputs["depth"].to(device)
 
     loss = model_loss(depth_est, depth_gt, mask)
 
