@@ -80,7 +80,6 @@ class SimlarityRegNet(nn.Module):
         # out: [B,D,H,W]
         # TODO
 
-        print(x.size())
 
         B,G,D,H,W = x.size()
         x=  x.transpose(1, 2).reshape(B*D, G, H, W)
@@ -184,7 +183,6 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
     with torch.no_grad():
         depth_samples = depth_samples.unsqueeze(2).repeat(1, 1, height)
         depth_samples = depth_samples.unsqueeze(3).repeat(1, 1, 1, width)
-        print(f'depth samples{depth_samples.shape}\n{depth_samples[0][0]}')
 
         proj = torch.matmul(src_proj, torch.inverse(ref_proj))
         rot = proj[:, :3, :3]  # [B,3,3]
@@ -219,7 +217,6 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         proj_xy = torch.stack((proj_x_normalized, proj_y_normalized), dim=3)  # [B, Ndepth, H*W, 2]
         grid = proj_xy
         grid = grid.view(batch, num_depth * height, width, 2)
-        print(f'grid\n{grid[0][0]}')
 
     warped_src_fea = F.grid_sample(
         src_fea,
@@ -239,7 +236,6 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
     # out: [B,G,D,H,W]
 
     B, C, D, H, W = warped_src_fea.size()
-    print(warped_src_fea.size())
     output = torch.ones((B,G,D,H,W))
 
     channel_in_group = C / G
@@ -252,7 +248,6 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
         upper = (g + 1) * channel_in_group
         output[:, g, :, :, :] = torch.sum(ref_fea[:, lower : upper, :, :].unsqueeze(2) * warped_src_fea[:, lower : upper, :, :, :], dim = 1) * G / C
     
-    print('output shape', output.shape)
 
     return output
 
@@ -268,7 +263,7 @@ def depth_regression(P, depth_values):
     # D is 192. The number of depth values
     
     B, D, _, _ = P.size()
-    output = torch.sum(P * depth_values.view(B, D, 1, 1), dim = 1).unsqueeze(1)
+    output = torch.sum(P * depth_values.view(B, D, 1, 1), dim = 1)
 
     return output
 
@@ -277,11 +272,10 @@ def mvs_loss(depth_est, depth_gt, mask):
     # depth_gt: [B,1,H,W]
     # mask: [B,1,H,W]
     # TODO
-    print(mask)
     mask = mask > 1e-5
     masked_depth_est = depth_est[mask]
     masked_depth_gt = depth_gt[mask]
-    loss_function = nn.l1_loss()
+    loss_function = nn.L1Loss()
 
     loss = loss_function(masked_depth_est, masked_depth_gt)
 
