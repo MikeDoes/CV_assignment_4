@@ -109,7 +109,7 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
     with torch.no_grad():
         depth_values = depth_values.unsqueeze(2).repeat(1, 1, H)
         depth_values = depth_values.unsqueeze(3).repeat(1,1,1, W)
-        
+
         # relative transformation from reference to source view
         proj = torch.matmul(src_proj, torch.inverse(ref_proj))
 
@@ -159,6 +159,7 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
 
         warped_src_fea.view(B, C, D, H, W)
 
+        print('Warped Size:',warped_src_fea.size())
     # warped_src_fea: [B,C,D,H,W]
     return warped_src_fea
 
