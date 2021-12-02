@@ -7,7 +7,6 @@ class FeatureNet(nn.Module):
     def __init__(self):
         super(FeatureNet, self).__init__()
 
-
         self.conv1 = nn.Conv2d(3, 8, (3,3), stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(8)
         self.relu = nn.ReLU(True)
@@ -80,9 +79,12 @@ class SimlarityRegNet(nn.Module):
         # x: [B,G,D,H,W]
         # out: [B,D,H,W]
         # TODO
-        B,G,D,H,W = x.size()
-        x=  x.transpose(1, 2).reshape(B*D, G, H, W).
+
         print(x.size())
+
+        B,G,D,H,W = x.size()
+        x=  x.transpose(1, 2).reshape(B*D, G, H, W)
+        
         C_0 = self.relu(self.conv1(x))
         C_1 = self.relu(self.conv2(C_0))
         C_3 = self.relu(self.conv3(C_1))
@@ -252,7 +254,7 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
         output[:, g, :, :, :] = torch.sum(ref_fea[:, lower : upper, :, :].unsqueeze(2) * warped_src_fea[:, lower : upper, :, :, :], dim = 1) * G / C
     
     print('output shape', output.shape)
-    
+
     return output
 
 
