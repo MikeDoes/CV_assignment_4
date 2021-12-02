@@ -199,6 +199,8 @@ def mvs_loss(depth_est, depth_gt, mask):
     mask = mask > 1e-5
     masked_depth_est = depth_est[mask]
     masked_depth_gt = depth_gt[mask]
-    loss = F.l1_loss(masked_depth_est, masked_depth_gt, reduction='mean')
+    loss_function = nn.l1_loss()
+
+    loss = loss_function(masked_depth_est, masked_depth_gt)
 
     return loss
