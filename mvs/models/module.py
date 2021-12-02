@@ -70,8 +70,8 @@ class SimlarityRegNet(nn.Module):
         self.conv1 = nn.Conv2d(G, 8, (3,3), stride=1, padding=1)
         self.conv2 = nn.Conv2d(8, 16, (3,3), stride=2, padding=1)
         self.conv3 = nn.Conv2d(16, 32, (3,3), stride=2, padding=1)
-        self.conv_transpose_1 = nn.Conv2d(32, 16, (3,3), stride=2, padding=1, output_padding=1)
-        self.conv_transpose_2 = nn.Conv2d(16, 8, (3,3), stride=2, padding=1, output_padding=1)
+        self.conv_transpose_1 = nn.ConvTranspose2d(32, 16, (3,3), stride=2, padding=1, output_padding=1)
+        self.conv_transpose_2 = nn.ConvTranspose2d(16, 8, (3,3), stride=2, padding=1, output_padding=1)
         
         self.conv4 = nn.Conv2d(8, 1, (3,3), stride=1, padding=1)
         
