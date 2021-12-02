@@ -84,7 +84,6 @@ class SimlarityRegNet(nn.Module):
 
         B,G,D,H,W = x.size()
         x=  x.transpose(1, 2).reshape(B*D, G, H, W)
-        
         C_0 = self.relu(self.conv1(x))
         C_1 = self.relu(self.conv2(C_0))
         C_3 = self.relu(self.conv3(C_1))
