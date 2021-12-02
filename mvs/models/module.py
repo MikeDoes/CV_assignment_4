@@ -81,6 +81,7 @@ class SimlarityRegNet(nn.Module):
         # out: [B,D,H,W]
         # TODO
         B,G,D,H,W = x.size()
+        x=  x.transpose(1, 2).reshape(B*D, G, H, W).
         print(x.size())
         C_0 = self.relu(self.conv1(x))
         C_1 = self.relu(self.conv2(C_0))
@@ -228,7 +229,7 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
     )
     
     warped_src = warped_src_fea.view(batch, channels, num_depth, height, width)
-    print(warped_src[0][0][0])
+    
     return warped_src
 
 def group_wise_correlation(ref_fea, warped_src_fea, G):
@@ -242,7 +243,6 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
 
     channel_in_group = C / G
 
-    print(channel_in_group)
     
     channel_in_group = int(channel_in_group)
 
@@ -250,7 +250,9 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
         lower = g * channel_in_group
         upper = (g + 1) * channel_in_group
         output[:, g, :, :, :] = torch.sum(ref_fea[:, lower : upper, :, :].unsqueeze(2) * warped_src_fea[:, lower : upper, :, :, :], dim = 1) * G / C
-        
+    
+    print('output shape', output.shape)
+    
     return output
 
 
