@@ -23,8 +23,8 @@ def read_cam_file(filename):
     depth_min = float(lines[11].split(' ')[0].replace('\n', ''))
     depth_max = float(lines[11].split(' ')[1].replace('\n', ''))
     
-    intrinsics = np.array(intrinsics, dtype=np.float16).reshape(3,3)
-    extrinsics = np.array(extrinsics, dtype=np.float16).reshape(4,4)
+    intrinsics = np.array(intrinsics, dtype=np.float32).reshape(3,3)
+    extrinsics = np.array(extrinsics, dtype=np.float32).reshape(4,4)
 
     return intrinsics, extrinsics, depth_min, depth_max
 
@@ -35,7 +35,7 @@ def read_img(filename):
     
     im_frame = Image.open(filename)
     #np_image = np.array(im_frame.getdata())
-    np_img = np.asarray(im_frame, dtype=np.float16)
+    np_img = np.asarray(im_frame, dtype=np.float32)
     np_img /= 255.0
 
     return np_img
