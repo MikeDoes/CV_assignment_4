@@ -196,9 +196,10 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         )
         y, x = y.contiguous(), x.contiguous()
         y, x = y.view(height * width), x.view(height * width)
-        xyz = torch.stack((x, y, torch.ones_like(x)))  # [3, H*W]
+        xyz = torch.stack((x, y, torch.ones_like(x, dtype=torch.float32)))  # [3, H*W]
         xyz = torch.unsqueeze(xyz, 0).repeat(batch, 1, 1)  # [B, 3, H*W]
-        xyz = xyz.double()
+        
+        #xyz = xyz.double()
         rot_xyz = torch.matmul(rot, xyz)  # [B, 3, H*W]
 
         rot_depth_xyz = rot_xyz.unsqueeze(2).repeat(1, 1, num_depth, 1) * depth_samples.view(
@@ -217,7 +218,6 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         grid = proj_xy
         grid = grid.view(batch, num_depth * height, width, 2)
         print(f'grid\n{grid[0][0]}')
-        src_fea = src_fea.double()
 
     warped_src_fea = F.grid_sample(
         src_fea,
@@ -260,8 +260,8 @@ def depth_regression(P, depth_values):
     # depth values is the actual depth of the points
     # D is 192. The number of depth values
     
-    B, D, _, _ = p.size()
-    output = torch.sum(p * depth_values.view (B, D, 1, 1), dim = 1)
+    B, D, _, _ = P.size()
+    output = torch.sum(P * depth_values.view(B, D, 1, 1), dim = 1).unsqueeze(1)
 
     return output
 
