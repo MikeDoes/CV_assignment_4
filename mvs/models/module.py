@@ -89,7 +89,7 @@ class SimlarityRegNet(nn.Module):
         S_ = self.relu(self.conv4(C_4 + C_0))
 
         S_ = S_.view((B,D,H,W))
-        
+
         return S_
 
 def warping(src_fea, src_proj, ref_proj, depth_values):
@@ -176,15 +176,29 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
     return output
 
 
-def depth_regression(p, depth_values):
-    # p: probability volume [B, D, H, W]
+def depth_regression(P, depth_values):
+    # P: probability volume [B, D, H, W]
     # depth_values: discrete depth values [B, D]
     # TODO
-    pass
+    #Softmax on the D dimension, which is 1
+    # P is the priobability volume
+    # p is the pixel coordinates
+    # depth values is the actual depth of the points
+    # D is 192. The number of depth values
+    
+    B, D, _, _ = p.size()
+    output = torch.sum(p * depth_values.view (B, D, 1, 1), dim = 1)
+
+    return output
 
 def mvs_loss(depth_est, depth_gt, mask):
     # depth_est: [B,1,H,W]
     # depth_gt: [B,1,H,W]
     # mask: [B,1,H,W]
     # TODO
-    pass
+    mask = mask > 1e-5
+    masked_depth_est = depth_est[mask]
+    masked_depth_gt = depth_gt[mask]
+    loss = F.l1_loss(masked_depth_est, masked_depth_gt, reduction='mean')
+    
+    return loss
