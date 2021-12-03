@@ -199,6 +199,7 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
 
         projection = xyz + trans.view(B, 1, 3, 1, 1)
 
+        projection = projection.reshape(2, 192, 3, H*W)
         grid = projection[:, :2, :, :] / projection[:, 2:3, :, :]  # [B, 2, Ndepth, H*W]
         proj_x_normalized = grid[:, 0, :, :] / ((W - 1) / 2) - 1  # [B, Ndepth, H*W]
         proj_y_normalized = grid[:, 1, :, :] / ((H - 1) / 2) - 1
