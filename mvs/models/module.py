@@ -199,10 +199,11 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
 
         projection = xyz + trans.view(B, 1, 3, 1, 1)
 
-        grid = projection[:, :, :2, :, :]  / projection[:, :, 2:3, :, :]
-        proj_x_normalized = projection[:, :, 0, :, :] / ((W-1)/2)-1
-        proj_y_normalized = projection[:, :, 1, :, :] / ((H-1)/2)-1
-        grid = torch.stack((proj_x_normalized, proj_y_normalized), dim=2).permute(0,1,3,4,2).view(B,D*H,W,2)
+        projection = projection.reshape(2, 192, 3, H*W)
+        grid = projection[:, :2, :, :] / projection[:, 2:3, :, :]  # [B, 2, Ndepth, H*W]
+        proj_x_normalized = grid[:, 0, :, :] / ((W - 1) / 2) - 1  # [B, Ndepth, H*W]
+        proj_y_normalized = grid[:, 1, :, :] / ((H - 1) / 2) - 1
+        grid = torch.stack((proj_x_normalized, proj_y_normalized), dim=3)  # [B, Ndepth, H*W, 2]
 
     warped_src_fea = F.grid_sample(
         src_fea,
@@ -212,7 +213,7 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
         align_corners=True,
     )
 
-    
+    print(warped_src_fea.shape)
 
     warped_src = warped_src_fea.view(B, C, D, H, W)
 
