@@ -98,17 +98,7 @@ class SimlarityRegNet(nn.Module):
 
 
 """ def warping(src_fea, src_proj, ref_proj, depth_values):
-    # src_fea: [B, C, H, W]
-    # Batch, Color, Height, Width
-    # src_proj: [B, 4, 4]
-    # ref_proj: [B, 4, 4]
-    # depth_values: [B, D]
-    # out: [B, C, D, H, W]
-    # Batch, Colour, Depth, Height, Width
-
-    B,C,H,W = src_fea.size()
-    D = depth_values.size(1)
-    # compute the warped positions with depth values
+   
 
     with torch.no_grad():
         depth_values = depth_values.unsqueeze(2).repeat(1, 1, H)
@@ -169,21 +159,19 @@ class SimlarityRegNet(nn.Module):
  """
 
 
-def warping(src_fea, src_proj, ref_proj, depth_samples):
+def warping(src_fea, src_proj, ref_proj, depth_values):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    """Differentiable homography-based warping, implemented in Pytorch.
-    Args:
-        src_fea: [B, C, H, W] source features, for each source view in batch
-        src_proj: [B, 4, 4] source camera projection matrix, for each source view in batch
-        ref_proj: [B, 4, 4] reference camera projection matrix, for each ref view in batch
-        depth_samples: [B, Ndepth, H, W] virtual depth layers
-        [B, D]
-    Returns:
-        warped_src_fea: [B, C, Ndepth, H, W] features on depths after perspective transformation
-    """
+    # src_fea: [B, C, H, W]
+    # Batch, Color, Height, Width
+    # src_proj: [B, 4, 4]
+    # ref_proj: [B, 4, 4]
+    # depth_values: [B, D]
+    # out: [B, C, D, H, W]
+    # Batch, Colour, Depth, Height, Width
 
-    B, C, H, W = src_fea.shape
-    D = depth_samples.shape[1]
+    B,C,H,W = src_fea.size()
+    D = depth_values.size(1)
+    # compute the warped positions with depth values
 
     with torch.no_grad():
         
@@ -203,13 +191,15 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         y, x = y.view(H * W), x.view(H * W)
 
         
-        xyz = torch.stack((x, y, torch.ones(y.shape)), dim=2)
-        
-        print('ROTATION MATRIX SHAPE', rot)
-        print('DEPTH SAMPLE SHAPES', depth_samples.shape)
+        xyz = torch.stack((x, y, torch.ones(y.shape)))
+        xyz = xyz.view((1, 1, 3, 128, 160))
+        depth_values = depth_values.view((2, 192, 1, 1, 1))
+        xyz = torch.mul(xyz, depth_values, dim=2)
+
+        xyz.reshape()
         rot_xyz = torch.matmul(rot, xyz)
-        proj_xyz = rot_xyz + trans.view(B, 3, 1, 1)
-        grid = proj_xyz
+        grid = rot_xyz + trans.view(B, 3, 1, 1)
+        
 
         """ 
 
