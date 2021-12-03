@@ -174,8 +174,6 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
     # compute the warped positions with depth values
 
     with torch.no_grad():
-        
-
         proj = torch.matmul(src_proj, torch.inverse(ref_proj))
         rot = proj[:, :3, :3]  # [B,3,3]
         trans = proj[:, :3, 3:4]  # [B,3,1]
@@ -192,45 +190,19 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
 
         
         xyz = torch.stack((x, y, torch.ones(y.shape).to(device)))
-        rot_xyz = torch.matmul(rot, xyz)
+        xyz = torch.matmul(rot, xyz)
         
         xyz = xyz.view((2, 1, 3, 128, 160))
         depth_values = depth_values.view((2, 192, 1, 1, 1))
         xyz = torch.mul(xyz, depth_values)
         
 
-        grid = xyz + trans.view(B, 1, 3, 1, 1)
+        projection = xyz + trans.view(B, 1, 3, 1, 1)
 
-        """ 
-
-        #Stack a z axis with 1s
-        xyz = torch.stack((x, y, torch.ones_like(x, dtype=torch.float32)))
-        xyz = torch.unsqueeze(xyz, 0).repeat(B, 1, 1)
-
-        rot_xyz = torch.matmul(rot, xyz)
-    
-        depth_samples = depth_samples.unsqueeze(2).repeat(1, 1, H)
-        depth_samples = depth_samples.unsqueeze(3).repeat(1, 1, 1, W)
-
-        rot_depth_xyz = rot_xyz.unsqueeze(2).repeat(
-            1, 1, D, 1
-        ) * depth_samples.view(
-            B, 1, D, H * W
-        )  
-        # [B, 3, Ndepth, H*W]
-        
-        proj_xyz = rot_depth_xyz + trans.view(B, 3, 1, 1)
-        # avoid negative depth
-        negative_depth_mask = proj_xyz[:, 2:] <= 1e-3
-        proj_xyz[:, 0:1][negative_depth_mask] = float(W)
-        proj_xyz[:, 1:2][negative_depth_mask] = float(H)
-        proj_xyz[:, 2:3][negative_depth_mask] = 1.0
-        proj_xy = proj_xyz[:, :2, :, :] / proj_xyz[:, 2:3, :, :]
-        proj_x_normalized = proj_xy[:, 0, :, :] / ((W - 1) / 2) - 1
-        proj_y_normalized = proj_xy[:, 1, :, :] / ((H - 1) / 2) - 1
-        proj_xy = torch.stack((proj_x_normalized, proj_y_normalized), dim=3)
-        grid = proj_xy
-        grid = grid.view(B, D * H, W, 2) """
+        grid = projection[:, :2, :, :] / projection[:, 2:3, :, :]  # [B, 2, Ndepth, H*W]
+        proj_x_normalized = grid[:, 0, :, :] / ((W - 1) / 2) - 1  # [B, Ndepth, H*W]
+        proj_y_normalized = grid[:, 1, :, :] / ((H - 1) / 2) - 1
+        grid = torch.stack((proj_x_normalized, proj_y_normalized), dim=3)  # [B, Ndepth, H*W, 2]
 
     warped_src_fea = F.grid_sample(
         src_fea,
