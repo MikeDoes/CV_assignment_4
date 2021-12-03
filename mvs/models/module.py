@@ -170,6 +170,7 @@ class SimlarityRegNet(nn.Module):
 
 
 def warping(src_fea, src_proj, ref_proj, depth_samples):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     """Differentiable homography-based warping, implemented in Pytorch.
     Args:
         src_fea: [B, C, H, W] source features, for each source view in batch
@@ -201,14 +202,14 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         y, x = y.contiguous(), x.contiguous()
         y, x = y.view(H * W), x.view(H * W)
 
-        z = depth_samples.view(B,D,1) @ torch.ones(y.shape).view(1, H*W)
+        z = depth_samples.view(B,D,1) @ torch.ones(y.shape).view(1, H*W).to(device)
 
         x = depth_samples.view(B,D,1) @ x.view(1, H*W)
         y = depth_samples.view(B,D,1) @ y.view(1, H*W)
 
 
-        xy = torch.stack(x, y, dim=2)
-        xyz = torch.stack(xy, z, dim=2)
+        xy = torch.stack((x, y), dim=2)
+        xyz = torch.stack((xy, z), dim=2)
 
         rot_xyz = torch.matmul(rot, xyz)
         proj_xyz = rot_xyz + trans.view(B, 3, 1, 1)
