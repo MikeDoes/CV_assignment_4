@@ -97,67 +97,8 @@ class SimlarityRegNet(nn.Module):
         return S_
 
 
-""" def warping(src_fea, src_proj, ref_proj, depth_values):
-   
 
-    with torch.no_grad():
-        depth_values = depth_values.unsqueeze(2).repeat(1, 1, H)
-        depth_values = depth_values.unsqueeze(3).repeat(1,1,1, W)
-
-        # relative transformation from reference to source view
-        proj = torch.matmul(src_proj, torch.inverse(ref_proj))
-
-        # Splitting the projection matrix into rotation and transformation
-        rot = proj[:, :3, :3]  # [B,3,3]
-        trans = proj[:, :3, 3:4]  # [B,3,1]
-
-        # y = te
-        y, x = torch.meshgrid([torch.arange(0, H, dtype=torch.float32, device=src_fea.device),
-                               torch.arange(0, W, dtype=torch.float32, device=src_fea.device)])
-
-        y, x = y.contiguous(), x.contiguous()
-        y, x = y.view(H * W), x.view(H * W)
         
-        
-
-        # X is reference, y is source? There is no ref_features. They are in the group_wise_correlation function
-        # Use this rotation matrix, 'rot' and transformation, 'trans' matrix on each src_feat
-        # What's this x, y business about? It is actually the transforming src_feature in the device paramater
-        # I believe it is also flattening them with torch.view(x* y)
-
-        # TODO
-        #  get warped_src_fea with bilinear interpolation (use 'grid_sample' function from pytorch)
-        
-        xyz = torch.stack((x, y, torch.ones_like(x)))  # [3, H*W]
-        xyz = torch.unsqueeze(xyz, 0).repeat(B, 1, 1)  # [B, 3, H*W]
-        rot_xyz = torch.matmul(rot, xyz)  # [B, 3, H*W]
-
-        print(depth_values.shape)
-
-        rot_depth_xyz = rot_xyz.unsqueeze(2).repeat(1, 1, D, 1) * depth_values.view(B, 1, D, H * W)  # [B, 3, D, H*W]
-        proj_xyz = rot_depth_xyz + trans.view(B, 3, 1, 1)  # [B, 3, D, H*W]
-       
-        proj_xy = proj_xyz[:, :2, :, :] / proj_xyz[:, 2:3, :, :]  # [B, 2, D, H*W]
-        proj_x_normalized = proj_xy[:, 0, :, :] / ((W - 1) / 2) - 1  # [B, D, H*W]
-        proj_y_normalized = proj_xy[:, 1, :, :] / ((H - 1) / 2) - 1
-        proj_xy = torch.stack((proj_x_normalized, proj_y_normalized), dim=3)  # [B, D, H*W, 2]
-        grid = proj_xy
-
-        warped_src_fea = F.grid_sample(
-            src_fea,
-            grid.view(B, D * H, W, 2),
-            mode="bilinear",
-            padding_mode="zeros",
-            align_corners=True,
-        )
-
-        warped_src_fea = warped_src_fea.view(B, C, D, H, W)
-
-        print('Warped Size:',warped_src_fea.size())
-    # warped_src_fea: [B,C,D,H,W]
-    return warped_src_fea
- """
-
 
 def warping(src_fea, src_proj, ref_proj, depth_values):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -168,6 +109,13 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
     # depth_values: [B, D]
     # out: [B, C, D, H, W]
     # Batch, Colour, Depth, Height, Width
+    # X is reference, y is source? There is no ref_features. They are in the group_wise_correlation function
+    # Use this rotation matrix, 'rot' and transformation, 'trans' matrix on each src_feat
+    # What's this x, y business about? It is actually the transforming src_feature in the device paramater
+    # I believe it is also flattening them with torch.view(x* y)
+
+    # TODO
+    #  get warped_src_fea with bilinear interpolation (use 'grid_sample' function from pytorch)
 
     B,C,H,W = src_fea.size()
     D = depth_values.size(1)
@@ -202,7 +150,7 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
         grid = projection[:, :, :2, :, :]  / projection[:, :, 2:3, :, :]
         proj_x_normalized = projection[:, :, 0, :, :] / ((W-1)/2)-1
         proj_y_normalized = projection[:, :, 1, :, :] / ((H-1)/2)-1
-        grid = torch.stack((proj_x_normalized, proj_y_normalized), dim=2).permute(0,1,3,4,2).view(B,D*H,W,2)
+        grid = torch.stack((proj_x_normalized, proj_y_normalized), dim=2).permute(0,1,3,4,2).reshape(B,D*H,W,2)
 
     warped_src_fea = F.grid_sample(
         src_fea,
@@ -211,8 +159,6 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
         padding_mode="zeros",
         align_corners=True,
     )
-
-    print(warped_src_fea.shape)
 
     warped_src = warped_src_fea.view(B, C, D, H, W)
 
