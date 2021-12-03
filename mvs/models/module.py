@@ -191,15 +191,15 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
         y, x = y.view(H * W), x.view(H * W)
 
         
-        xyz = torch.stack((x, y, torch.ones(y.shape)))
-        xyz = xyz.view((1, 1, 3, 128, 160))
-        depth_values = depth_values.view((2, 192, 1, 1, 1))
-        xyz = torch.mul(xyz, depth_values, dim=2)
-
-        xyz.reshape()
+        xyz = torch.stack((x, y, torch.ones(y.shape).to(device)))
         rot_xyz = torch.matmul(rot, xyz)
-        grid = rot_xyz + trans.view(B, 3, 1, 1)
         
+        xyz = xyz.view((2, 1, 3, 128, 160))
+        depth_values = depth_values.view((2, 192, 1, 1, 1))
+        xyz = torch.mul(xyz, depth_values)
+        
+
+        grid = xyz + trans.view(B, 1, 3, 1, 1)
 
         """ 
 
