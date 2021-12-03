@@ -97,9 +97,6 @@ class SimlarityRegNet(nn.Module):
         return S_
 
 
-
-        
-
 def warping(src_fea, src_proj, ref_proj, depth_values):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # src_fea: [B, C, H, W]
@@ -117,7 +114,7 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
     # TODO
     #  get warped_src_fea with bilinear interpolation (use 'grid_sample' function from pytorch)
 
-    B,C,H,W = src_fea.size()
+    B, C, H, W = src_fea.size()
     D = depth_values.size(1)
     # compute the warped positions with depth values
 
@@ -136,22 +133,24 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
         y, x = y.contiguous(), x.contiguous()
         y, x = y.view(H * W), x.view(H * W)
 
-        
         xyz = torch.stack((x, y, torch.ones(y.shape).to(device)))
         xyz = torch.matmul(rot, xyz)
-        
+
         xyz = xyz.view((2, 1, 3, 128, 160))
         depth_values = depth_values.view((2, 192, 1, 1, 1))
         xyz = torch.mul(xyz, depth_values)
-        
 
         projection = xyz + trans.view(B, 1, 3, 1, 1)
 
-        grid = projection[:, :, :2, :, :]  / projection[:, :, 2:3, :, :]
-        proj_x_normalized = grid[:, :, 0, :, :] / ((W-1)/2)-1
-        proj_y_normalized = grid[:, :, 1, :, :] / ((H-1)/2)-1
-        grid = torch.stack((proj_x_normalized, proj_y_normalized), dim=2).permute(0,1,3,4,2).reshape(B,D*H,W,2)
-        #.permute(0,1,3,4,2).reshape(B,D*H,W,2)
+        grid = projection[:, :, :2, :, :] / projection[:, :, 2:3, :, :]
+        proj_x_normalized = grid[:, :, 0, :, :] / ((W - 1) / 2) - 1
+        proj_y_normalized = grid[:, :, 1, :, :] / ((H - 1) / 2) - 1
+        grid = (
+            torch.stack((proj_x_normalized, proj_y_normalized), dim=2)
+            .permute(0, 1, 3, 4, 2)
+            .reshape(B, D * H, W, 2)
+        )
+        # .permute(0,1,3,4,2).reshape(B,D*H,W,2)
 
     warped_src_fea = F.grid_sample(
         src_fea,
@@ -187,7 +186,8 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
                 * warped_src_fea[:, lower:upper, :, :, :],
                 dim=1,
             )
-            * G / C
+            * G
+            / C
         )
 
     return output
