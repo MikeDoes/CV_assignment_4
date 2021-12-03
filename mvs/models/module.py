@@ -7,15 +7,15 @@ class FeatureNet(nn.Module):
     def __init__(self):
         super(FeatureNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(3, 8, (3,3), stride=1, padding=1)
+        self.conv1 = nn.Conv2d(3, 8, (3, 3), stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(8)
         self.relu = nn.ReLU(True)
 
-        self.conv2 = nn.Conv2d(8, 8, (3,3), stride=1, padding=1)
+        self.conv2 = nn.Conv2d(8, 8, (3, 3), stride=1, padding=1)
         self.bn2 = nn.BatchNorm2d(8)
-        
+
         # W/2 x H/2 x 16 Need to double check the magic formula
-        self.conv3 = nn.Conv2d(8, 16, (5,5), stride=2, padding=2)
+        self.conv3 = nn.Conv2d(8, 16, (5, 5), stride=2, padding=2)
         self.bn3 = nn.BatchNorm2d(16)
 
         # W/2 x H/2 x 16
@@ -43,8 +43,8 @@ class FeatureNet(nn.Module):
 
     def forward(self, x):
         # x: [B,3,H,W]
-        ### Do the ConvBnReLU structure suggested in the assignment guidelines 
-        # TODO DONE 
+        ### Do the ConvBnReLU structure suggested in the assignment guidelines
+        # TODO DONE
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.relu(self.bn2(self.conv2(x)))
         x = self.relu(self.bn3(self.conv3(x)))
@@ -54,7 +54,7 @@ class FeatureNet(nn.Module):
         x = self.relu(self.bn7(self.conv7(x)))
         x = self.relu(self.bn8(self.conv8(x)))
         x = self.conv9(x)
-        
+
         return x
 
 
@@ -64,25 +64,27 @@ class SimlarityRegNet(nn.Module):
         # TODO
         self.G = G
         self.relu = nn.ReLU(True)
-        
-        #Not sure about the padding = 'same'
-        self.conv1 = nn.Conv2d(G, 8, (3,3), stride=1, padding=1)
-        self.conv2 = nn.Conv2d(8, 16, (3,3), stride=2, padding=1)
-        self.conv3 = nn.Conv2d(16, 32, (3,3), stride=2, padding=1)
-        self.conv_transpose_1 = nn.ConvTranspose2d(32, 16, (3,3), stride=2, padding=1, output_padding=1)
-        self.conv_transpose_2 = nn.ConvTranspose2d(16, 8, (3,3), stride=2, padding=1, output_padding=1)
-        
-        self.conv4 = nn.Conv2d(8, 1, (3,3), stride=1, padding=1)
-        
+
+        # Not sure about the padding = 'same'
+        self.conv1 = nn.Conv2d(G, 8, (3, 3), stride=1, padding=1)
+        self.conv2 = nn.Conv2d(8, 16, (3, 3), stride=2, padding=1)
+        self.conv3 = nn.Conv2d(16, 32, (3, 3), stride=2, padding=1)
+        self.conv_transpose_1 = nn.ConvTranspose2d(
+            32, 16, (3, 3), stride=2, padding=1, output_padding=1
+        )
+        self.conv_transpose_2 = nn.ConvTranspose2d(
+            16, 8, (3, 3), stride=2, padding=1, output_padding=1
+        )
+
+        self.conv4 = nn.Conv2d(8, 1, (3, 3), stride=1, padding=1)
 
     def forward(self, x):
         # x: [B,G,D,H,W]
         # out: [B,D,H,W]
         # TODO
 
-
-        B,G,D,H,W = x.size()
-        x=  x.transpose(1, 2).reshape(B*D, G, H, W)
+        B, G, D, H, W = x.size()
+        x = x.transpose(1, 2).reshape(B * D, G, H, W)
         C_0 = self.relu(self.conv1(x))
         C_1 = self.relu(self.conv2(C_0))
         C_3 = self.relu(self.conv3(C_1))
@@ -90,9 +92,10 @@ class SimlarityRegNet(nn.Module):
         C_4 = self.conv_transpose_2(C_3 + C_1)
         S_ = self.relu(self.conv4(C_4 + C_0))
 
-        S_ = S_.view((B,D,H,W))
+        S_ = S_.view((B, D, H, W))
 
         return S_
+
 
 """ def warping(src_fea, src_proj, ref_proj, depth_values):
     # src_fea: [B, C, H, W]
@@ -165,6 +168,7 @@ class SimlarityRegNet(nn.Module):
     return warped_src_fea
  """
 
+
 def warping(src_fea, src_proj, ref_proj, depth_samples):
     """Differentiable homography-based warping, implemented in Pytorch.
     Args:
@@ -177,12 +181,11 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         warped_src_fea: [B, C, Ndepth, H, W] features on depths after perspective transformation
     """
 
-    batch, channels, height, width = src_fea.shape
-    num_depth = depth_samples.shape[1]
+    B, C, H, W = src_fea.shape
+    D = depth_samples.shape[1]
 
     with torch.no_grad():
-        depth_samples = depth_samples.unsqueeze(2).repeat(1, 1, height)
-        depth_samples = depth_samples.unsqueeze(3).repeat(1, 1, 1, width)
+        
 
         proj = torch.matmul(src_proj, torch.inverse(ref_proj))
         rot = proj[:, :3, :3]  # [B,3,3]
@@ -190,33 +193,55 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
 
         y, x = torch.meshgrid(
             [
-                torch.arange(0, height, dtype=torch.float32, device=src_fea.device),
-                torch.arange(0, width, dtype=torch.float32, device=src_fea.device),
+                torch.arange(0, H, dtype=torch.float32, device=src_fea.device),
+                torch.arange(0, W, dtype=torch.float32, device=src_fea.device),
             ]
         )
-        y, x = y.contiguous(), x.contiguous()
-        y, x = y.view(height * width), x.view(height * width)
-        xyz = torch.stack((x, y, torch.ones_like(x, dtype=torch.float32)))  # [3, H*W]
-        xyz = torch.unsqueeze(xyz, 0).repeat(batch, 1, 1)  # [B, 3, H*W]
-        
-        #xyz = xyz.double()
-        rot_xyz = torch.matmul(rot, xyz)  # [B, 3, H*W]
 
-        rot_depth_xyz = rot_xyz.unsqueeze(2).repeat(1, 1, num_depth, 1) * depth_samples.view(
-            batch, 1, num_depth, height * width
-        )  # [B, 3, Ndepth, H*W]
-        proj_xyz = rot_depth_xyz + trans.view(batch, 3, 1, 1)  # [B, 3, Ndepth, H*W]
+        y, x = y.contiguous(), x.contiguous()
+        y, x = y.view(H * W), x.view(H * W)
+
+        z = depth_samples.view(B,D,1) @ torch.ones_like(x.shape).view(1, H*W)
+        x = depth_samples.view(B,D,1) @ x.view(1, H*W)
+        y = depth_samples.view(B,D,1) @ y.view(1, H*W)
+
+
+        xy = torch.stack(x, y, dim=2)
+        xyz = torch.stack(xy, z, dim=2)
+
+        rot_xyz = torch.matmul(rot, xyz)
+        proj_xyz = rot_xyz + trans.view(B, 3, 1, 1)
+        grid = proj_xyz
+        """ 
+
+        #Stack a z axis with 1s
+        xyz = torch.stack((x, y, torch.ones_like(x, dtype=torch.float32)))
+        xyz = torch.unsqueeze(xyz, 0).repeat(B, 1, 1)
+
+        rot_xyz = torch.matmul(rot, xyz)
+    
+        depth_samples = depth_samples.unsqueeze(2).repeat(1, 1, H)
+        depth_samples = depth_samples.unsqueeze(3).repeat(1, 1, 1, W)
+
+        rot_depth_xyz = rot_xyz.unsqueeze(2).repeat(
+            1, 1, D, 1
+        ) * depth_samples.view(
+            B, 1, D, H * W
+        )  
+        # [B, 3, Ndepth, H*W]
+        
+        proj_xyz = rot_depth_xyz + trans.view(B, 3, 1, 1)
         # avoid negative depth
         negative_depth_mask = proj_xyz[:, 2:] <= 1e-3
-        proj_xyz[:, 0:1][negative_depth_mask] = float(width)
-        proj_xyz[:, 1:2][negative_depth_mask] = float(height)
+        proj_xyz[:, 0:1][negative_depth_mask] = float(W)
+        proj_xyz[:, 1:2][negative_depth_mask] = float(H)
         proj_xyz[:, 2:3][negative_depth_mask] = 1.0
-        proj_xy = proj_xyz[:, :2, :, :] / proj_xyz[:, 2:3, :, :]  # [B, 2, Ndepth, H*W]
-        proj_x_normalized = proj_xy[:, 0, :, :] / ((width - 1) / 2) - 1  # [B, Ndepth, H*W]
-        proj_y_normalized = proj_xy[:, 1, :, :] / ((height - 1) / 2) - 1
-        proj_xy = torch.stack((proj_x_normalized, proj_y_normalized), dim=3)  # [B, Ndepth, H*W, 2]
+        proj_xy = proj_xyz[:, :2, :, :] / proj_xyz[:, 2:3, :, :]
+        proj_x_normalized = proj_xy[:, 0, :, :] / ((W - 1) / 2) - 1
+        proj_y_normalized = proj_xy[:, 1, :, :] / ((H - 1) / 2) - 1
+        proj_xy = torch.stack((proj_x_normalized, proj_y_normalized), dim=3)
         grid = proj_xy
-        grid = grid.view(batch, num_depth * height, width, 2)
+        grid = grid.view(B, D * H, W, 2) """
 
     warped_src_fea = F.grid_sample(
         src_fea,
@@ -225,10 +250,11 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         padding_mode="zeros",
         align_corners=True,
     )
-    
-    warped_src = warped_src_fea.view(batch, channels, num_depth, height, width)
-    
+
+    warped_src = warped_src_fea.view(B, C, D, H, W)
+
     return warped_src
+
 
 def group_wise_correlation(ref_fea, warped_src_fea, G):
     # ref_fea: [B,C,H,W]
@@ -236,18 +262,23 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
     # out: [B,G,D,H,W]
 
     B, C, D, H, W = warped_src_fea.size()
-    output = torch.ones((B,G,D,H,W))
+    output = torch.ones((B, G, D, H, W))
 
     channel_in_group = C / G
 
-    
     channel_in_group = int(channel_in_group)
 
     for g in range(channel_in_group):
         lower = g * channel_in_group
         upper = (g + 1) * channel_in_group
-        output[:, g, :, :, :] = torch.sum(ref_fea[:, lower : upper, :, :].unsqueeze(2) * warped_src_fea[:, lower : upper, :, :, :], dim = 1) * G / C
-    
+        output[:, g, :, :, :] = (
+            torch.sum(
+                ref_fea[:, lower:upper, :, :].unsqueeze(2)
+                * warped_src_fea[:, lower:upper, :, :, :],
+                dim=1,
+            )
+            * G / C
+        )
 
     return output
 
@@ -256,23 +287,25 @@ def depth_regression(P, depth_values):
     # P: probability volume [B, D, H, W]
     # depth_values: discrete depth values [B, D]
     # TODO
-    #Softmax on the D dimension, which is 1
+    # Softmax on the D dimension, which is 1
     # P is the priobability volume
     # p is the pixel coordinates
     # depth values is the actual depth of the points
     # D is 192. The number of depth values
-    
+
     B, D, _, _ = P.size()
-    output = torch.sum(P * depth_values.view(B, D, 1, 1), dim = 1)
+    output = P * depth_values.view(B, D, 1, 1)
+    output = torch.sum(output, dim=1)
 
     return output
+
 
 def mvs_loss(depth_est, depth_gt, mask):
     # depth_est: [B,1,H,W]
     # depth_gt: [B,1,H,W]
     # mask: [B,1,H,W]
     # TODO
-    mask = mask > 1e-5
+    mask = mask > 1e-3
     masked_depth_est = depth_est[mask]
     masked_depth_gt = depth_gt[mask]
     loss_function = nn.L1Loss()
