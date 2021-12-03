@@ -147,7 +147,7 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
 
         projection = xyz + trans.view(B, 1, 3, 1, 1)
 
-        grid = projection[:, :, :2, :, :]  / projection[:, :, 2:3, :, :]
+        projection = projection[:, :, :2, :, :]  / projection[:, :, 2:3, :, :]
         proj_x_normalized = projection[:, :, 0, :, :] / ((W-1)/2)-1
         proj_y_normalized = projection[:, :, 1, :, :] / ((H-1)/2)-1
         grid = torch.stack((proj_x_normalized, proj_y_normalized), dim=2).permute(0,1,3,4,2).reshape(B,D*H,W,2)
