@@ -20,6 +20,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.dataset == 'dtu':
         path =  os.path.join(args.logdir, 'mvs{:0>3}_l3.ply'.format(args.scan))
+        print(path)
     else:
         path =  os.path.join(args.logdir, args.scan+'.ply')
     pcd = o3d.io.read_point_cloud(path)

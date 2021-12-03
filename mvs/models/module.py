@@ -136,17 +136,17 @@ def warping(src_fea, src_proj, ref_proj, depth_values):
         xyz = torch.stack((x, y, torch.ones(y.shape).to(device)))
         xyz = torch.matmul(rot, xyz)
 
-        xyz = xyz.view((2, 1, 3, 128, 160))
-        depth_values = depth_values.view((2, 192, 1, 1, 1))
+        xyz = xyz.view((B, 1, 3, H, W))
+        depth_values = depth_values.view((B, D, 1, 1, 1))
         xyz = torch.mul(xyz, depth_values)
 
         projection = xyz + trans.view(B, 1, 3, 1, 1)
 
         grid = projection[:, :, :2, :, :] / projection[:, :, 2:3, :, :]
-        proj_x_normalized = grid[:, :, 0, :, :] / ((W - 1) / 2) - 1
-        proj_y_normalized = grid[:, :, 1, :, :] / ((H - 1) / 2) - 1
+        x_norm = grid[:, :, 0, :, :] / ((W - 1) / 2) - 1
+        y_norm = grid[:, :, 1, :, :] / ((H - 1) / 2) - 1
         grid = (
-            torch.stack((proj_x_normalized, proj_y_normalized), dim=2)
+            torch.stack((x_norm, y_norm), dim=2)
             .permute(0, 1, 3, 4, 2)
             .reshape(B, D * H, W, 2)
         )
@@ -171,6 +171,7 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
     # out: [B,G,D,H,W]
 
     B, C, D, H, W = warped_src_fea.size()
+    
     output = torch.ones((B, G, D, H, W))
 
     channel_in_group = C / G
@@ -178,16 +179,11 @@ def group_wise_correlation(ref_fea, warped_src_fea, G):
     channel_in_group = int(channel_in_group)
 
     for g in range(channel_in_group):
-        lower = g * channel_in_group
-        upper = (g + 1) * channel_in_group
-        output[:, g, :, :, :] = (
-            torch.sum(
-                ref_fea[:, lower:upper, :, :].unsqueeze(2)
-                * warped_src_fea[:, lower:upper, :, :, :],
-                dim=1,
-            )
-            * G
-            / C
+        start, end = g * channel_in_group, g * channel_in_group + channel_in_group
+        output[:, g, :, :, :] = (G / C) * torch.sum(
+            ref_fea[:, start:end, :, :].unsqueeze(2)
+            * warped_src_fea[:, start:end, :, :, :],
+            dim=1,
         )
 
     return output
@@ -205,6 +201,7 @@ def depth_regression(P, depth_values):
 
     B, D, _, _ = P.size()
     output = P * depth_values.view(B, D, 1, 1)
+    
     output = torch.sum(output, dim=1)
 
     return output
