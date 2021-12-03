@@ -204,7 +204,9 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
 
         
         xyz = torch.stack((x, y, torch.ones(y.shape)), dim=2)
-        xyz *= depth_samples
+        
+        print('ROTATION MATRIX SHAPE', rot)
+        print('DEPTH SAMPLE SHAPES', depth_samples.shape)
         rot_xyz = torch.matmul(rot, xyz)
         proj_xyz = rot_xyz + trans.view(B, 3, 1, 1)
         grid = proj_xyz
