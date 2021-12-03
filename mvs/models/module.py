@@ -201,7 +201,8 @@ def warping(src_fea, src_proj, ref_proj, depth_samples):
         y, x = y.contiguous(), x.contiguous()
         y, x = y.view(H * W), x.view(H * W)
 
-        z = depth_samples.view(B,D,1) @ torch.ones_like(x.shape).view(1, H*W)
+        z = depth_samples.view(B,D,1) @ torch.ones(y.shape).view(1, H*W)
+
         x = depth_samples.view(B,D,1) @ x.view(1, H*W)
         y = depth_samples.view(B,D,1) @ y.view(1, H*W)
 
